@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+    <!-- выше расположенна конфигурация, которая позволяет использовать спринг фреймворк -->
+    <!-- просто скопировал-вставил -->
+
+
+    <!-- Жизненный цикл бина -> запускается спринг приложение, запускается контейнер спринга, создается объект бина, -->
+    <!-- в бин внедряются зависимости, вызывается init метод, бин готов к исп., вызываетс destroy метод, -->
+    <!-- остановка спринг приложения -->
+
+    <!-- У бина есть два метода init, destroy -->
+    <!-- init - метод который запускается в ходе инициализации бина -->
+    <!-- Инициализация ресурсов, обращение к внешним файлам, запуск БД и т.д. -->
+    <!-- destroy - метод который запускается в ходе уничтожения бина (при завершении приложения) -->
+    <!-- Очищение ресурсов, закрытие потоков ввода-вывода, закрытие доступа к БД и т.д. -->
+    <bean id="initDestroyExample"
+          class="Service.InitDestroyExample"
+          scope="singleton"
+          init-method="doMyInit" destroy-method="doMyDestroy">
+        <!--Если область видимости стоит "prototype", то destroy метод не вызывается-->
+        <!--Если "singleton", то destroy метод вызывается-->
+        <!-- Spring не берет на себя полный жизненный цикл бина с scope="prototype" -->
+    </bean>
+
+    <!-- фабричный метод - factory-method, это паттерн программирования который берет на себя создание объекта -->
+    <!-- Под капотом factory-method, использует ключевое слово new для создания объектов  -->
+    <!-- То есть мы не сами создаем объект через new, а фабричный метод делает это за нас -->
+    <!-- Когда спринг будет создавать бин этого класса, спринг будет вызывать factory-method -->
+	<!-- этот фабричный метод должен быть Static так как он принадлежит классу -->
+    <bean id="factoryMethodExample"
+          class="Service.FactoryMethodExample"
+          factory-method="getFactoryMethodExample">
+        <!-- Если scope="singleton", то спринг вызовет factory-method один раз, и всякий раз когда будет вызыватся -->
+        <!-- getBean(), то новым объектам спринг будет давать ссылку на первый созданный объект factory-method -->
+    </bean>
+
+
+    <!-- В данном случае, конфиг для спринга описан в xml файле -->
+
+
+    <!-- спринг фреймворк прочитает этот файл и из этого файла он создаст бин ниже  -->
+    <!-- который мы описали -->
+    <!-- У бина есть id, самое главное = нужно прописать путь к классу, бин которого я хочу создать -->
+    <!-- Бин так же имеет область видимости по умолчанию scope="Singleton". Видимость Singleton используется -->
+    <!-- тогда, когда у бина нет изменяемых состояний -->
+    <!-- У всех объектов которые вызывают бин с видимостью Singleton, есть общее состояние. Тоесть они ссылаются -->
+    <!-- на одно и тоже место в памяти, изменение состояния одного объекта, повлечет изменение у других объектов -->
+    <!-- MusicPlayer firstMusicPlayer = context.getBean("musicPlayer", MusicPlayer.class) -->
+    <!-- MusicPlayer secondMusicPlayer = context.getBean("musicPlayer", MusicPlayer.class) -->
+    <!-- У двух объектов выше, общее состояние. -->
+    <bean id="testBean" class="ru.alishev.springcourse.TestBean" scope="singleton">
+        <!-- Если у объекта есть конструктор, код ниже будет передавать параметр в конструктор объекта -->
+        <!-- в нашем случае будет передан значение поля "value", и сохранен в поле "name" объекта класса TestBean  -->
+        <constructor-arg value="Neil"/>
+    </bean>
+
+    <!-- область видимости scope="Prototype", для каждого объекта который получит бин, будет собственная область -->
+    <!-- памяти, тоесть состояние уникальное для каждого объекта -->
+    <!-- Пример внедрения зависимости через конструктор -->
+    <!-- Объект который создает spring из класса, называется бин -->
+    <bean id="musicPlayer" class="Service.MusicPlayer" scope="prototype">
+        <!-- в конструктор этого класса передана ссылка на бин "classicalMusic" -->
+        <constructor-arg ref="musicService"/>
+        <!-- ${...}  данный синтаксис, позволяет обращатся к данным из подключенного файла -->
+        <!-- в HTML разметке также фигурирует данный синтаксис -->
+        <property name="length" value="${musicPlayer.length}"/>
+        <property name="size" value="${musicPlayer.size}"/>
+    </bean>
+
+    <bean id="musicService" class="Service.MusicService">
+        <property name="rockMusic" ref="rockMusic"/>
+        <property name="classicalMusic" ref="classicalMusic"/>
+    </bean>
+
+    <bean id="classicalMusic" class="Entity.ClassicalMusic"/>
+        <!-- В этом классе конструктора нет -->
+    <bean id="rockMusic" class="Entity.RockMusic"/>
+    <!-- в переменной classpath, находится адрес до папки resources -->
+    <!-- context:property-placeholder нужно указать в качестве параметра, путь к файлу с данными -->
+    <!-- данные хранятся в формате ключ-значение -->
+    <context:property-placeholder location="classpath:musicPlayer.properties" />
+
+
+    <!-- Пример введения зависимости через setter -->
+    <!-- В классе должен быть описан setter для этого поля -->
+    <bean id="carService" class="Service.CarService">
+        <!-- в поле name, нужно ввести сеттер только без "set". setAuto -> auto,  -->
+        <!-- по конвенции italicCase, spring поймет что Auto -> auto -->
+        <property name="auto" ref="lada"/>
+
+        <!-- передача значения в зависимость (не ссылки) -->
+        <property name="available" value="true"/>
+        <property name="carCount" value="5"/>
+        <!---->
+    </bean>
+    <bean id="lada" class="Entity.Lada"/>
+    <bean id="mazda" class="Entity.Mazda"/>
+
+</beans>
